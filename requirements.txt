@@ -1,0 +1,1 @@
+wandb==0.10.7  # https://github.com/wandb/client/issues/1457
