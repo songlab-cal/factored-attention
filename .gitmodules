@@ -1,0 +1,3 @@
+[submodule "mogwai"]
+	path = mogwai
+	url = https://github.com/nickbhat/mogwai.git
