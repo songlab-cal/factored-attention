@@ -1,0 +1,50 @@
+method: grid
+command:
+  - ${env}
+  - ${interpreter}
+  - mogwai-train
+  - data/4rb6Y/4rb6Y.i90c75.a3m
+  - --structure_file "data/4rb6Y/4rb6Y.cf"
+  - --model "factored_attention"
+  - ${args}
+metric:
+  goal: maximize
+  name: auc
+parameters:
+  batch_size:
+    distribution: categorical
+    values:
+    - 128
+  optimizer:
+    distribution: categorical
+    values:
+    - "adam"
+    - "lamb"
+  learning_rate:
+    distribution: uniform
+    max: 0.01
+    min: 0.001
+  l2_coeff:
+    distribution: uniform
+    min: 0.0001
+    max: 0.01
+  attention_head_size:
+    distribution: categorical
+    values:
+    - 16
+    - 32
+    - 64
+    - 256
+    - 512
+  max_steps:
+    distribution: categorical
+    values:
+    - 5000
+  num_attention_heads:
+    distribution: categorical
+    values:
+    - 32
+    - 64
+    - 128
+    - 256
+    - 512
