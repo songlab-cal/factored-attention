@@ -1,3 +1,13 @@
+# Data
+data/
+
+# Logging
+wandb/
+lightning_logs/
+gremlin-contacts/
+gremlin-results/
+fatt-pl-results/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
