@@ -1,11 +1,10 @@
-method: grid
+method: random
 command:
-  - ${env}
-  - ${interpreter}
-  - mogwai-train
+  - mogwai-train 
   - data/4rb6Y/4rb6Y.i90c75.a3m
-  - --structure_file "data/4rb6Y/4rb6Y.cf"
-  - --model "factored_attention"
+  - --structure_file=data/4rb6Y/4rb6Y.cf
+  - --model=factored_attention
+  - --wandb_project=gremlin-contacts
   - ${args}
 metric:
   goal: maximize
