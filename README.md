@@ -9,8 +9,9 @@ $ make build
 
 ## Updating Mogwai Submodule
 
-To update the Mogwai submodule after the version has changed, please run
+Anytime you pull, please be sure to update the Mogwai submodule as well
 ```bash
+$ git pull
 $ make
 ```
 
