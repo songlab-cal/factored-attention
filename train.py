@@ -2,6 +2,8 @@ from argparse import ArgumentParser
 import matplotlib.pyplot as plt
 from pathlib import Path
 import pytorch_lightning as pl
+import random
+import string
 import torch
 import wandb
 
@@ -52,7 +54,9 @@ def train():
     args = parser.parse_args()
 
     # Modify name
+    pdb = args.data
     args.data = "data/trrosetta/" + args.data + ".npz"
+    print(args.data)
 
     # Load msa
     msa_dm = MSADataModule.from_args(args)
@@ -74,8 +78,9 @@ def train():
     )
 
     kwargs = {}
-
-    logger = pl.loggers.WandbLogger(project=args.wandb_project)
+    randstring = "".join(random.choice(string.ascii_lowercase) for i in range(6))
+    run_name = "_".join([args.model, pdb, randstring])
+    logger = pl.loggers.WandbLogger(project=args.wandb_project, name=run_name)
     logger.log_hyperparams(args)
     logger.log_hyperparams(
         {
