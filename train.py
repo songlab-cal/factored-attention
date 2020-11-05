@@ -55,7 +55,7 @@ def train():
 
     # Modify name
     pdb = args.data
-    args.data = "data/trrosetta/" + args.data + ".npz"
+    args.data = "data/npz/" + args.data + ".npz"
     print(args.data)
 
     # Load msa
