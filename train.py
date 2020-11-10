@@ -1,12 +1,14 @@
 from argparse import ArgumentParser
-import matplotlib.pyplot as plt
+import os
 from pathlib import Path
-import pytorch_lightning as pl
 import random
 import string
+
+import matplotlib.pyplot as plt
+import pytorch_lightning as pl
 import torch
 import wandb
-
+import boto3
 
 from mogwai.data_loading import MSADataModule
 from mogwai.parsing import read_contacts
@@ -21,6 +23,9 @@ from mogwai.vocab import FastaVocab
 
 from loggers import WandbLoggerFrozenVal
 
+s3_client = boto3.client('s3')
+s3_bucket = 'proteindata'
+
 def train():
     # Initialize parser
     parser = ArgumentParser()
@@ -32,10 +37,9 @@ def train():
     )
     model_name = parser.parse_known_args()[0].model
     parser.add_argument(
-        "--output_file",
-        type=str,
-        default=None,
-        help="Optional file to output gremlin weights.",
+        "--save_model",
+        action="store_true",
+        help="Whether to save the model state dict.",
     )
     parser.add_argument(
         "--wandb_project",
@@ -142,8 +146,14 @@ def train():
     logger.log_metrics({filename: wandb.Image(plt)})
     plt.close()
 
-    if args.output_file is not None:
-        torch.save(model.state_dict(), args.output_file)
+    import pdb; pdb.set_trace()
+    if args.save_model is not None:
+        modelfile = os.path.join(wandb.run.dir, 'model_state_dict.h5')
+        torch.save(model.state_dict(), modelfile)
+        s3_target = os.path.join('iclr-2021-factored-attention', 'proteins/iclr2021-rebuttal/8cj6km2q', 'model_state_dict.h5')
+        response = s3_client.upload_file(modelfile, s3_bucket, s3_target, ExtraArgs={'ACL': 'public-read'})
+
+
 
 
 if __name__ == "__main__":
