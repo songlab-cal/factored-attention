@@ -19,6 +19,7 @@ from mogwai.plotting import (
 )
 from mogwai.vocab import FastaVocab
 
+from loggers import WandbLoggerFrozenVal
 
 def train():
     # Initialize parser
@@ -39,11 +40,34 @@ def train():
     parser.add_argument(
         "--wandb_project",
         type=str,
-        default="gremlin-contacts",
+        default="iclr2021-rebuttal",
         help="W&B project used for logging.",
     )
+
+    # Trainer args
+    parser.add_argument(
+        "--max_steps",
+        type=int,
+        help="Max number of gradient steps for training",
+    )
+    parser.add_argument(
+        "--min_steps",
+        type=int,
+        help="Min number of gradient steps for training",
+    )
+    parser.add_argument(
+        "--gpus",
+        type=int,
+        help="Number of gpus to use",
+    )
+    parser.add_argument(
+        "--pdb",
+        type=str,
+        help="PDB id for training",
+    )
+
     parser = MSADataModule.add_args(parser)
-    parser = pl.Trainer.add_argparse_args(parser)
+    # parser = pl.Trainer.add_argparse_args(parser)
     parser.set_defaults(
         gpus=1,
         min_steps=50,
@@ -54,8 +78,8 @@ def train():
     args = parser.parse_args()
 
     # Modify name
-    pdb = args.data
-    args.data = "data/npz/" + args.data + ".npz"
+    pdb = args.pdb
+    args.data = "data/npz/" + pdb + ".npz"
     print(args.data)
 
     # Load msa
@@ -80,11 +104,11 @@ def train():
     kwargs = {}
     randstring = "".join(random.choice(string.ascii_lowercase) for i in range(6))
     run_name = "_".join([args.model, pdb, randstring])
-    logger = pl.loggers.WandbLogger(project=args.wandb_project, name=run_name)
+    logger = WandbLoggerFrozenVal(project=args.wandb_project, name=run_name)
     logger.log_hyperparams(args)
     logger.log_hyperparams(
         {
-            "pdb": Path(args.data).stem,
+            "pdb": pdb,
             "num_seqs": num_seqs,
             "msa_length": msa_length,
         }
