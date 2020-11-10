@@ -150,7 +150,7 @@ def train():
     if args.save_model is not None:
         modelfile = os.path.join(wandb.run.dir, 'model_state_dict.h5')
         torch.save(model.state_dict(), modelfile)
-        s3_target = os.path.join('iclr-2021-factored-attention', 'proteins/iclr2021-rebuttal/8cj6km2q', 'model_state_dict.h5')
+        s3_target = os.path.join('iclr-2021-factored-attention', wandb.run.path, 'model_state_dict.h5')
         response = s3_client.upload_file(modelfile, s3_bucket, s3_target, ExtraArgs={'ACL': 'public-read'})
 
 
