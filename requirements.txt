@@ -1,1 +1,4 @@
+jupyterlab
+pandas
+seaborn
 wandb>=0.10.9  # https://github.com/wandb/client/issues/1457
