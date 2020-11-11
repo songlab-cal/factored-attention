@@ -23,8 +23,9 @@ from mogwai.vocab import FastaVocab
 
 from loggers import WandbLoggerFrozenVal
 
-s3_client = boto3.client('s3')
-s3_bucket = 'proteindata'
+s3_client = boto3.client("s3")
+s3_bucket = "proteindata"
+
 
 def train():
     # Initialize parser
@@ -126,9 +127,10 @@ def train():
 
     # Log and print some metrics after training.
     contacts = model.get_contacts()
+    apc_contacts = apc(contacts)
+
     auc = contact_auc(contacts, true_contacts).item()
-    contacts = apc(contacts)
-    auc_apc = contact_auc(contacts, true_contacts).item()
+    auc_apc = contact_auc(apc_contacts, true_contacts).item()
     print(f"AUC: {auc:0.3f}, AUC_APC: {auc_apc:0.3f}")
 
     filename = "top_L_contacts.png"
@@ -137,22 +139,24 @@ def train():
     plt.close()
 
     filename = "top_L_contacts_apc.png"
-    plot_colored_preds_on_trues(apc(contacts), true_contacts, point_size=5)
+    plot_colored_preds_on_trues(apc_contacts, true_contacts, point_size=5)
     logger.log_metrics({filename: wandb.Image(plt)})
     plt.close()
 
     filename = "precision_vs_L.png"
-    plot_precision_vs_length(contacts, true_contacts)
+    plot_precision_vs_length(apc_contacts, true_contacts)
     logger.log_metrics({filename: wandb.Image(plt)})
     plt.close()
 
     if args.save_model is not None:
-        modelfile = os.path.join(wandb.run.dir, 'model_state_dict.h5')
+        modelfile = os.path.join(wandb.run.dir, "model_state_dict.h5")
         torch.save(model.state_dict(), modelfile)
-        s3_target = os.path.join('iclr-2021-factored-attention', wandb.run.path, 'model_state_dict.h5')
-        response = s3_client.upload_file(modelfile, s3_bucket, s3_target, ExtraArgs={'ACL': 'public-read'})
-
-
+        s3_target = os.path.join(
+            "iclr-2021-factored-attention", wandb.run.path, "model_state_dict.h5"
+        )
+        response = s3_client.upload_file(
+            modelfile, s3_bucket, s3_target, ExtraArgs={"ACL": "public-read"}
+        )
 
 
 if __name__ == "__main__":
