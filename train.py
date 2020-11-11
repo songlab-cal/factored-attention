@@ -148,7 +148,7 @@ def train():
     logger.log_metrics({filename: wandb.Image(plt)})
     plt.close()
 
-    if args.save_model is not None:
+    if args.save_model:
         modelfile = os.path.join(wandb.run.dir, "model_state_dict.h5")
         torch.save(model.state_dict(), modelfile)
         s3_target = os.path.join(
