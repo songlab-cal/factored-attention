@@ -85,7 +85,6 @@ def train():
     # Modify name
     pdb = args.pdb
     args.data = "data/npz/" + pdb + ".npz"
-    print(args.data)
 
     # Load msa
     msa_dm = MSADataModule.from_args(args)
