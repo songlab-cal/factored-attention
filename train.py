@@ -48,23 +48,6 @@ def train():
         default="iclr2021-rebuttal",
         help="W&B project used for logging.",
     )
-
-    # Trainer args
-    parser.add_argument(
-        "--max_steps",
-        type=int,
-        help="Max number of gradient steps for training",
-    )
-    parser.add_argument(
-        "--min_steps",
-        type=int,
-        help="Min number of gradient steps for training",
-    )
-    parser.add_argument(
-        "--gpus",
-        type=int,
-        help="Number of gpus to use",
-    )
     parser.add_argument(
         "--pdb",
         type=str,
@@ -72,11 +55,12 @@ def train():
     )
 
     parser = MSADataModule.add_args(parser)
-    # parser = pl.Trainer.add_argparse_args(parser)
+    parser = pl.Trainer.add_argparse_args(parser)
     parser.set_defaults(
         gpus=1,
         min_steps=50,
         max_steps=1000,
+        log_every_n_steps=10,
     )
     model_type = models.get(model_name)
     model_type.add_args(parser)
