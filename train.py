@@ -95,11 +95,13 @@ def train():
 
     # Initialize model
     num_seqs, msa_length, msa_counts = msa_dm.get_stats()
+    batch_size = msa_dm.batch_size
     model = model_type.from_args(
         args,
         num_seqs=num_seqs,
         msa_length=msa_length,
         msa_counts=msa_counts,
+        batch_size=batch_size,
         vocab_size=len(FastaVocab),
         pad_idx=FastaVocab.pad_idx,
         true_contacts=true_contacts,
@@ -133,12 +135,26 @@ def train():
     print(f"AUC: {auc:0.3f}, AUC_APC: {auc_apc:0.3f}")
 
     filename = "top_L_contacts.png"
-    plot_colored_preds_on_trues(contacts, true_contacts, point_size=5)
+    plot_colored_preds_on_trues(contacts, true_contacts, point_size=5, cutoff=1)
+    plt.title(f"Top L no APC {model.get_precision(do_apc=False)}")
     logger.log_metrics({filename: wandb.Image(plt)})
     plt.close()
 
     filename = "top_L_contacts_apc.png"
-    plot_colored_preds_on_trues(apc_contacts, true_contacts, point_size=5)
+    plot_colored_preds_on_trues(apc_contacts, true_contacts, point_size=5, cutoff=1)
+    plt.title(f"Top L APC {model.get_precision(do_apc=True)}")
+    logger.log_metrics({filename: wandb.Image(plt)})
+    plt.close()
+
+    filename = "top_L_5_contacts.png"
+    plot_colored_preds_on_trues(contacts, true_contacts, point_size=5, cutoff=5)
+    plt.title(f"Top L/5 no APC {model.get_precision(do_apc=False, cutoff=5)}")
+    logger.log_metrics({filename: wandb.Image(plt)})
+    plt.close()
+
+    filename = "top_L_5_contacts_apc.png"
+    plot_colored_preds_on_trues(apc_contacts, true_contacts, point_size=5, cutoff=5)
+    plt.title(f"Top L/5 APC {model.get_precision(do_apc=True, cutoff=5)}")
     logger.log_metrics({filename: wandb.Image(plt)})
     plt.close()
 
