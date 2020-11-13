@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import random
 import string
+import io
 
 import matplotlib.pyplot as plt
 import pytorch_lightning as pl
@@ -38,7 +39,7 @@ def train():
     )
     model_name = parser.parse_known_args()[0].model
     parser.add_argument(
-        "--save_model",
+        "--save_model_s3",
         action="store_true",
         help="Whether to save the model state dict.",
     )
@@ -145,15 +146,15 @@ def train():
     logger.log_metrics({filename: wandb.Image(plt)})
     plt.close()
 
-    if args.save_model:
-        modelfile = os.path.join(wandb.run.dir, "model_state_dict.h5")
-        torch.save(model.state_dict(), modelfile)
-        s3_target = os.path.join(
+    if args.save_model_s3:
+        bytestream = io.BytesIO()
+        torch.save(model.state_dict(), bytestream)
+        bytestream.seek(0)
+        key = os.path.join(
             "iclr-2021-factored-attention", wandb.run.path, "model_state_dict.h5"
         )
-        response = s3_client.upload_file(
-            modelfile, s3_bucket, s3_target, ExtraArgs={"ACL": "public-read"}
-        )
+        response = s3_client.put_object(Bucket=s3_bucket, Body=bytestream, Key=key, ACL='public-read')
+        print(f'uploaded state dict to s3://{s3_bucket}/{key}')
 
 
 if __name__ == "__main__":
