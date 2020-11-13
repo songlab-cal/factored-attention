@@ -1,15 +1,54 @@
-from typing import Dict
+from typing import Dict, List
 
-import wandb
-import pandas as pd
-from tqdm import tqdm
-import numpy as np
-import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from tqdm import tqdm
+import wandb
 
 api = wandb.Api()
 
 entity = "proteins"
+
+
+def multimsa_pair_plot(df, k1, k2, m="auc"):
+    filtered_df_x = df[df.sweep_name == k1]
+    filtered_df_y = df[df.sweep_name == k2]
+    lsuffix = "_x"
+    rsuffix = "_y"
+    merged_df = pd.merge(
+        filtered_df_x, filtered_df_y, on="pdb_idx", suffixes=(lsuffix, rsuffix)
+    )
+    print("comparison families: ", len(merged_df))
+    lseqs = "num_seqs" + lsuffix
+    rseqs = "num_seqs" + rsuffix
+    if lseqs in merged_df.keys():
+        seqs_column = lseqs
+    elif rseqs in merged_df.keys():
+        seqs_column = rseqs
+    else:
+        print("no seqs found for ")
+        print(df_x["model"].iloc(0))
+        print(df_y["model"].iloc(0))
+        return
+    plt.plot([0, 1], [0, 1], c="k")
+    num_seqs = merged_df[seqs_column]
+    plt.scatter(
+        merged_df[m + lsuffix],
+        merged_df[m + rsuffix],
+        c=num_seqs,
+        s=9,
+        norm=colors.LogNorm(vmin=num_seqs.min(), vmax=num_seqs.max()),
+        cmap="viridis",
+    )
+    cbar = plt.colorbar()
+    # cbar.locator = matplotlib.ticker.LogLocator(base=2)
+    # cbar.update_ticks()
+    plt.xlabel(k1)
+    plt.ylabel(k2)
+    cbar.set_label("# of msa sequences")
 
 
 def add_apc_default(df: pd.DataFrame, sweep_name: str) -> pd.DataFrame:
@@ -20,6 +59,38 @@ def add_apc_default(df: pd.DataFrame, sweep_name: str) -> pd.DataFrame:
     d.loc[:, "pr_at_L_5"] = d.loc[:, "pr_at_L_5_apc"]
     d.loc[:, "auc"] = d.loc[:, "auc_apc"]
     return df.append(d)
+
+
+def parse_old_model(df):
+    d = df[
+        [
+            "sweep_name",
+            "pdb",
+            "pdb_idx",
+            "len_ref",
+            "num_seqs",
+            "run_state",
+            "Train_Precision_@_l/1",
+            "Train_Precision_apc_@_l/1",
+            "Train_Precision_@_l/5",
+            "Train_Precision_apc_@_l/5",
+            "Train_Auc",
+            "Train_Auc_apc",
+        ]
+    ]
+    d = d.rename(
+        columns={
+            "Train_Precision_@_l/1": "pr_at_L",
+            "Train_Precision_apc_@_l/1": "pr_at_L_apc",
+            "Train_Precision_@_l/5": "pr_at_L_5",
+            "Train_Precision_apc_@_l/5": "pr_at_L_5_apc",
+            "Train_Auc": "auc",
+            "Train_Auc_apc": "auc_apc",
+            "len_ref": "msa_length",
+        }
+    )
+    d["log_num_seqs"] = np.log(d.num_seqs)
+    return d
 
 
 def load_attention_msa_df(sweep_id, sweep_name, model_name, pdb_map):
@@ -83,15 +154,25 @@ def load_attention_msa_df(sweep_id, sweep_name, model_name, pdb_map):
     return df
 
 
-def load_attention_msa_results() -> Dict[str, pd.DataFrame]:
+def load_attention_msa_runs(
+    runs: List[str] = ["gremlin", "old-fatt", "transformer", "protbert-bfd"]
+) -> Dict[str, pd.DataFrame]:
+
     # Loads static set of runs from attention_msa with fixed sweep names.
     old_models_to_id = {
         "gremlin": "9ppr5f9y",
         "old-fatt": "wqzai5ya",
         "transformer": "zd8rc6j7",
         "protbert-bfd": "l37wrnsa",
+        "gremlin-mlm": "9g72x083",
     }
-    sweep_ids_to_name = {v: k for k, v in old_models_to_id.items()}
+    assert set(runs).issubset(
+        set(old_models_to_id)
+    ), f"Got invalid old run names {set(runs).difference(set(old_models_to_id))}."
+
+    runs_to_load = {k: old_models_to_id[k] for k in runs}
+
+    sweep_ids_to_name = {v: k for k, v in runs_to_load.items()}
     pdb_id_map = get_test_pdbs()
     sweep_dfs = {
         sweep_name: load_attention_msa_df(
@@ -104,6 +185,8 @@ def load_attention_msa_results() -> Dict[str, pd.DataFrame]:
     }
 
     sweep_dfs = {k: s[s.run_state == "finished"] for k, s in sweep_dfs.items()}
+
+    sweep_dfs = {k: parse_old_model(v) for k, v in sweep_dfs.items()}
     return sweep_dfs
 
 
@@ -156,6 +239,68 @@ def get_sweep_df(sweep_id, sweep_name, model_name, pdb_map):
     )
 
     df.pdb = df.pdb.astype(str)
+    return df
+
+
+def parse_new_model(df):
+    d = df[
+        [
+            "sweep_name",
+            "pdb",
+            "msa_length",
+            "pdb_idx",
+            "num_seqs",
+            "run_state",
+            "pr_at_L",
+            "pr_at_L_apc",
+            "pr_at_L_5",
+            "pr_at_L_5_apc",
+            "auc",
+            "auc_apc",
+        ]
+    ].copy()
+    d["log_num_seqs"] = np.log(d.num_seqs)
+    return d
+
+
+def load_run_dict(name_to_sweep: Dict[str, str]) -> Dict[str, pd.DataFrame]:
+    sweep_ids_to_name = {v: k for k, v in name_to_sweep.items()}
+    pdb_id_map = get_test_pdbs()
+    sweep_dfs = {
+        sweep_name: get_sweep_df(
+            sweep_id,
+            sweep_name,
+            sweep_name,
+            pdb_id_map,
+        )
+        for sweep_id, sweep_name in sweep_ids_to_name.items()
+    }
+
+    sweep_dfs = {k: s[s.run_state == "finished"] for k, s in sweep_dfs.items()}
+    sweep_dfs = {k: parse_new_model(v) for k, v in sweep_dfs.items()}
+    return sweep_dfs
+
+
+def load_full_df(
+    name_to_sweep: Dict[str, str], old_runs: List[str] = ["protbert-bfd", "transformer"]
+) -> pd.DataFrame:
+    shared_keys = set(name_to_sweep.keys()).intersection(set(old_runs))
+    assert (
+        len(shared_keys) == 0
+    ), f"Sweep names {shared_keys} conflict with old run names."
+    run_dict = load_run_dict(name_to_sweep)
+    old_run_dict = load_attention_msa_runs(old_runs)
+
+    merged_dict = {**run_dict, **old_run_dict}
+    df = pd.concat(list(merged_dict.values()))
+    print(f"Shape pre dropping NaNs {df.shape}")
+    non_null_idx = np.where(df.notnull().all(1))[0]
+    df = df.iloc[non_null_idx]
+    print(f"Shape post dropping NaNs {df.shape}")
+
+    for key in df.sweep_name.unique():
+        df = add_apc_default(df, key)
+
     return df
 
 
