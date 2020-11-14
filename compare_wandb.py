@@ -253,7 +253,7 @@ def parse_new_model(df):
     d = df[
         [
             "sweep_name",
-            # "model",
+            "model",
             "pdb",
             "msa_length",
             "pdb_idx",
