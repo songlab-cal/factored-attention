@@ -11,7 +11,7 @@ import torch
 import wandb
 import boto3
 
-from mogwai.data_loading import MSADataModule
+from mogwai.data_loading import MSADataModule, MSDataModule
 from mogwai.parsing import read_contacts
 from mogwai import models
 from mogwai.utils.functional import apc
@@ -37,7 +37,13 @@ def train():
         choices=models.MODELS.keys(),
         help="Which model to train.",
     )
+    parser.add_argument(
+        "--train_unaligned",
+        action="store_true",
+        help="Whether to train unaligned instead.",
+    )
     model_name = parser.parse_known_args()[0].model
+    train_unaligned = parser.parse_known_args()[0].train_unaligned
     parser.add_argument(
         "--save_model_s3",
         action="store_true",
@@ -55,7 +61,11 @@ def train():
         help="PDB id for training",
     )
 
-    parser = MSADataModule.add_args(parser)
+    if train_unaligned:
+        parser = MSDataModule.add_args(parser)
+    else:
+        parser = MSADataModule.add_args(parser)
+
     parser = pl.Trainer.add_argparse_args(parser)
     parser.set_defaults(
         gpus=1,
@@ -71,8 +81,11 @@ def train():
     pdb = args.pdb
     args.data = "data/npz/" + pdb + ".npz"
 
-    # Load msa
-    msa_dm = MSADataModule.from_args(args)
+    # Load ms(a)
+    if train_unaligned:
+        msa_dm = MSDataModule.from_args(args)
+    else:
+        msa_dm = MSADataModule.from_args(args)
     msa_dm.setup()
 
     # Load contacts
@@ -153,8 +166,10 @@ def train():
         key = os.path.join(
             "iclr-2021-factored-attention", wandb.run.path, "model_state_dict.h5"
         )
-        response = s3_client.put_object(Bucket=s3_bucket, Body=bytestream, Key=key, ACL='public-read')
-        print(f'uploaded state dict to s3://{s3_bucket}/{key}')
+        response = s3_client.put_object(
+            Bucket=s3_bucket, Body=bytestream, Key=key, ACL="public-read"
+        )
+        print(f"uploaded state dict to s3://{s3_bucket}/{key}")
 
 
 if __name__ == "__main__":
