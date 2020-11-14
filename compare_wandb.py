@@ -58,6 +58,7 @@ def add_apc_default(df: pd.DataFrame, sweep_name: str) -> pd.DataFrame:
     d.loc[:, "pr_at_L"] = d.loc[:, "pr_at_L_apc"]
     d.loc[:, "pr_at_L_5"] = d.loc[:, "pr_at_L_5_apc"]
     d.loc[:, "auc"] = d.loc[:, "auc_apc"]
+    d["apc"] = True
     return df.append(d)
 
 
@@ -90,6 +91,11 @@ def parse_old_model(df):
         }
     )
     d["log_num_seqs"] = np.log(d.num_seqs)
+    d["model"] = d["sweep_name"].map(lambda x: x.split("-")[0])
+    if "use_bias" in df.columns:
+        d["use_bias"] = df.use_bias
+    else:
+        d["use_bias"] = False
     return d
 
 
@@ -155,15 +161,16 @@ def load_attention_msa_df(sweep_id, sweep_name, model_name, pdb_map):
 
 
 def load_attention_msa_runs(
-    runs: List[str] = ["gremlin", "old-fatt", "transformer", "protbert-bfd"]
+    runs: List[str] = ["gremlin", "old_fatt", "transformer", "protbert_bfd"]
 ) -> Dict[str, pd.DataFrame]:
 
     # Loads static set of runs from attention_msa with fixed sweep names.
     old_models_to_id = {
         "gremlin": "9ppr5f9y",
-        "old-fatt": "wqzai5ya",
+        "old_fatt": "wqzai5ya",
         "transformer": "zd8rc6j7",
-        "protbert-bfd": "l37wrnsa",
+        "transformer-no-bias": "f4mdy8a6",
+        "protbert_bfd": "l37wrnsa",
         "gremlin-mlm": "9g72x083",
     }
     assert set(runs).issubset(
@@ -246,6 +253,7 @@ def parse_new_model(df):
     d = df[
         [
             "sweep_name",
+            # "model",
             "pdb",
             "msa_length",
             "pdb_idx",
@@ -257,6 +265,7 @@ def parse_new_model(df):
             "pr_at_L_5_apc",
             "auc",
             "auc_apc",
+            "use_bias",
         ]
     ].copy()
     d["log_num_seqs"] = np.log(d.num_seqs)
@@ -282,7 +291,8 @@ def load_run_dict(name_to_sweep: Dict[str, str]) -> Dict[str, pd.DataFrame]:
 
 
 def load_full_df(
-    name_to_sweep: Dict[str, str], old_runs: List[str] = ["protbert-bfd", "transformer"]
+    name_to_sweep: Dict[str, str],
+    old_runs: List[str] = ["protbert_bfd", "transformer", "transformer-no-bias"],
 ) -> pd.DataFrame:
     shared_keys = set(name_to_sweep.keys()).intersection(set(old_runs))
     assert (
@@ -297,6 +307,8 @@ def load_full_df(
     non_null_idx = np.where(df.notnull().all(1))[0]
     df = df.iloc[non_null_idx]
     print(f"Shape post dropping NaNs {df.shape}")
+
+    df["apc"] = False
 
     for key in df.sweep_name.unique():
         df = add_apc_default(df, key)
