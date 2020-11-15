@@ -12,6 +12,33 @@ api = wandb.Api()
 
 entity = "proteins"
 
+import matplotlib.ticker as ticker
+
+
+class StupidLogFormatter(ticker.LogFormatter):
+    def __init__(
+        self,
+        base: float = 10.0,
+        labelOnlyBase=False,
+        minor_thresholds=None,
+        linthresh=None,
+    ):
+        super().__init__(
+            base=base,
+            labelOnlyBase=labelOnlyBase,
+            minor_thresholds=minor_thresholds,
+            linthresh=linthresh,
+        )
+
+    def _num_to_string(self, x, vmin, vmax):
+        if x > 20000:
+            s = "%1.0e" % x
+        elif x < 1:
+            s = "%1.0e" % x
+        else:
+            s = self._pprint_val(x, vmax - vmin)
+        return s
+
 
 def multimsa_pair_plot(df, k1, k2, m="auc"):
     filtered_df_x = df[df.sweep_name == k1]
@@ -43,12 +70,22 @@ def multimsa_pair_plot(df, k1, k2, m="auc"):
         norm=colors.LogNorm(vmin=num_seqs.min(), vmax=num_seqs.max()),
         cmap="viridis",
     )
-    cbar = plt.colorbar()
+
+    formatter = StupidLogFormatter(base=2.0)
+    cbar = plt.colorbar(format=formatter)
     # cbar.locator = matplotlib.ticker.LogLocator(base=2)
     # cbar.update_ticks()
     plt.xlabel(k1)
     plt.ylabel(k2)
-    cbar.set_label("# of msa sequences")
+    cbar.set_label("\# of MSA sequences")
+
+    print("spoagef")
+
+    cbar.set_ticks(
+        ticker.LogLocator(base=2.0),
+        update_ticks=True,
+    )
+    cbar.minorticks_off()
 
 
 def add_apc_default(df: pd.DataFrame, sweep_name: str) -> pd.DataFrame:
@@ -90,7 +127,7 @@ def parse_old_model(df):
             "len_ref": "msa_length",
         }
     )
-    d["log_num_seqs"] = np.log(d.num_seqs)
+    d["log_num_seqs"] = np.log2(d.num_seqs)
     d["model"] = d["sweep_name"].map(lambda x: x.split("-")[0])
     if "use_bias" in df.columns:
         d["use_bias"] = df.use_bias
@@ -172,6 +209,8 @@ def load_attention_msa_runs(
         "transformer-no-bias": "f4mdy8a6",
         "protbert_bfd": "l37wrnsa",
         "gremlin-mlm": "9g72x083",
+        "transformer-ancient": "izo6oqpx",
+        "transformer-no-aln": "uvo31t02",
     }
     assert set(runs).issubset(
         set(old_models_to_id)
@@ -256,6 +295,7 @@ def parse_new_model(df):
             "model",
             "pdb",
             "msa_length",
+            "num_attention_heads",
             "pdb_idx",
             "num_seqs",
             "run_state",
@@ -268,7 +308,7 @@ def parse_new_model(df):
             "use_bias",
         ]
     ].copy()
-    d["log_num_seqs"] = np.log(d.num_seqs)
+    d["log_num_seqs"] = np.log2(d.num_seqs)
     return d
 
 
