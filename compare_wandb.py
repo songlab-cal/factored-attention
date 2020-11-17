@@ -77,6 +77,7 @@ def parse_old_model(df):
             "Train_Precision_apc_@_l/5",
             "Train_Auc",
             "Train_Auc_apc",
+            "run_id",
         ]
     ]
     d = d.rename(
@@ -250,6 +251,9 @@ def get_sweep_df(sweep_id, sweep_name, model_name, pdb_map):
 
 
 def parse_new_model(df):
+    if 'attention_head_size' not in df.keys():
+        df = df.assign(attention_head_size=-1)
+        df = df.assign(num_attention_heads=-1)
     d = df[
         [
             "sweep_name",
@@ -266,6 +270,9 @@ def parse_new_model(df):
             "auc",
             "auc_apc",
             "use_bias",
+            "run_id",
+            "attention_head_size",
+            "num_attention_heads"
         ]
     ].copy()
     d["log_num_seqs"] = np.log(d.num_seqs)
