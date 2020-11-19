@@ -159,13 +159,7 @@ def get_info(num_attention_heads,
 
 
 
-def main(pdb_filename, shard):
-
-    # load metatest pdbs
-    with open(pdb_filename, 'r') as f:
-        lines = f.readlines()
-        metatest_pdbs = [l.strip() for l in lines]
-
+def main(shard, total_shards):
     head_sweep_runs = {
         'fatt-metatest-head-sweep-512': 'bxnkt0uq',
         'fatt-metatest-head-256': 'xuofwjtc',
@@ -185,26 +179,30 @@ def main(pdb_filename, shard):
     filenames = ['gremlin.h5'] + [f'fatt_{n}.h5' for n in num_heads_sweep]
     info = []
 
-    try:
-        for pdb in tqdm(metatest_pdbs):
-            for num_attention_heads in num_heads_sweep:
-                info.append(get_info(num_attention_heads,
-                                     attention_head_size=32,
-                                     pdb=pdb,
-                                     fatt_df=fatt_df,
-                                     fatt_dest=f'fatt_s{shard}.h5',
-                                     gremlin_df = gremlin_df,
-                                     gremlin_dest=f'gremlin_s{shard}.h5'))
-    finally:
-        print(pdb)
-        sweep_df = pd.DataFrame.from_records(info)
-        with open(f'num_head_sweep_df_s_{shard}.pkl', 'wb') as f:
-            pkl.dump(sweep_df, f)
+
+    n = fatt_df.shape[0]
+    step = n//total_shards
+    start = shard*step
+    end = (shard + 1) * step
+    print(end - start)
+    print(fatt_df[start:end].shape)
+    for index, row in tqdm(fatt_df[start:end].iterrows()):
+        info.append(get_info(num_attention_heads=row['num_attention_heads'],
+                             attention_head_size=row['attention_head_size'],
+                             pdb=row['pdb'],
+                             fatt_df=fatt_df,
+                             fatt_dest=f'fatt_s{shard}.h5',
+                             gremlin_df = gremlin_df,
+                             gremlin_dest=f'gremlin_s{shard}.h5'))
+    print(len(info))
+    sweep_df = pd.DataFrame.from_records(info)
+    with open(f'num_head_sweep_df_s_{shard}.pkl', 'wb') as f:
+        pkl.dump(sweep_df, f)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pdb_filename")
     parser.add_argument("--shard", type=int)
+    parser.add_argument("--total_shards", type=int)
     args = parser.parse_args()
-    main(args.pdb_filename, args.shard)
+    main(args.shard, args.total_shards)
