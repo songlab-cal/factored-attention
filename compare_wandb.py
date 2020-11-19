@@ -288,31 +288,34 @@ def get_sweep_df(sweep_id, sweep_name, model_name, pdb_map):
     return df
 
 
-def parse_new_model(df):
-    d = df[
-        [
-            "sweep_name",
-            "model",
-            "pdb",
-            "msa_length",
-            "num_attention_heads",
-            "pdb_idx",
-            "num_seqs",
-            "run_state",
-            "pr_at_L",
-            "pr_at_L_apc",
-            "pr_at_L_5",
-            "pr_at_L_5_apc",
-            "auc",
-            "auc_apc",
-            "use_bias",
-        ]
-    ].copy()
+def parse_new_model(df, include_num_heads: bool, include_model: bool):
+    cols = [
+        "sweep_name",
+        "pdb",
+        "msa_length",
+        "pdb_idx",
+        "num_seqs",
+        "run_state",
+        "pr_at_L",
+        "pr_at_L_apc",
+        "pr_at_L_5",
+        "pr_at_L_5_apc",
+        "auc",
+        "auc_apc",
+        "use_bias",
+    ]
+    if include_num_heads:
+        cols += ["num_attention_heads"]
+    if include_model:
+        cols += ["model"]
+    d = df[cols].copy()
     d["log_num_seqs"] = np.log2(d.num_seqs)
     return d
 
 
-def load_run_dict(name_to_sweep: Dict[str, str]) -> Dict[str, pd.DataFrame]:
+def load_run_dict(
+    name_to_sweep: Dict[str, str], include_num_heads: bool, include_model: bool
+) -> Dict[str, pd.DataFrame]:
     sweep_ids_to_name = {v: k for k, v in name_to_sweep.items()}
     pdb_id_map = get_test_pdbs()
     sweep_dfs = {
@@ -325,20 +328,26 @@ def load_run_dict(name_to_sweep: Dict[str, str]) -> Dict[str, pd.DataFrame]:
         for sweep_id, sweep_name in sweep_ids_to_name.items()
     }
 
+    print("unfinished included boi")
     sweep_dfs = {k: s[s.run_state == "finished"] for k, s in sweep_dfs.items()}
-    sweep_dfs = {k: parse_new_model(v) for k, v in sweep_dfs.items()}
+    sweep_dfs = {
+        k: parse_new_model(v, include_num_heads, include_model)
+        for k, v in sweep_dfs.items()
+    }
     return sweep_dfs
 
 
 def load_full_df(
     name_to_sweep: Dict[str, str],
     old_runs: List[str] = ["protbert_bfd", "transformer", "transformer-no-bias"],
+    include_num_heads: bool = False,
+    include_model: bool = True,
 ) -> pd.DataFrame:
     shared_keys = set(name_to_sweep.keys()).intersection(set(old_runs))
     assert (
         len(shared_keys) == 0
     ), f"Sweep names {shared_keys} conflict with old run names."
-    run_dict = load_run_dict(name_to_sweep)
+    run_dict = load_run_dict(name_to_sweep, include_num_heads, include_model)
     old_run_dict = load_attention_msa_runs(old_runs)
 
     merged_dict = {**run_dict, **old_run_dict}
