@@ -147,14 +147,14 @@ def get_info(num_attention_heads,
     medium = precisions_in_range(predictions, targets, minsep=13, maxsep=25)
     for k, v in medium.items():
         metrics[f'medium_{k}'] = float(v.squeeze())
-    long = precisions_in_range(predictions, targets, minsep=13, maxsep=25)
+    long = precisions_in_range(predictions, targets, minsep=25)
     for k, v in long.items():
         metrics[f'long_{k}'] = float(v.squeeze())
-    wspearman, wpearson = get_correlations(w, w_fatt, msa_length, pdb=pdb)
-    metrics['w_spearman'] = wspearman
-    metrics['w_pearson'] = wpearson
-#     metrics['predicted_contacts_apc'] = predictions
-#     metrics['true_contacts'] = targets
+    # wspearman, wpearson = get_correlations(w, w_fatt, msa_length, pdb=pdb)
+    # metrics['w_spearman'] = wspearman
+    # metrics['w_pearson'] = wpearson
+    # metrics['predicted_contacts_apc'] = predictions
+    # metrics['true_contacts'] = targets
     return metrics
 
 
