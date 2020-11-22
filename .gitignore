@@ -9,6 +9,11 @@ gremlin-contacts/
 gremlin-results/
 fatt-pl-results/
 iclr2021-rebuttal/
+wandb_download/
+
+*.pdf
+*.pkl
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

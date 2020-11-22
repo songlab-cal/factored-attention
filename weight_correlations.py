@@ -70,6 +70,9 @@ def get_fatt_statedict(pdb, num_attention_heads, fatt_df, attention_head_size=32
     return statedict
 
 
+# probably should construct this dict once instead of iterating
+# over the whole df each time :) but luckily we are bottlenecked
+# by file download todo nthomas
 def get_msa_hparams(pdb, df):
     pdb = df[df['pdb'] == pdb]
     hparam_dict = pdb.to_dict()
