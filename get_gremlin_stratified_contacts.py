@@ -41,13 +41,13 @@ def get_gremlin_stratified_metrics(df, shard):
         metrics = {}
         metrics['pdb'] = pdb
         metrics['model'] = 'gremlin'
-        short = precisions_in_range(predictions, targets, minsep=6, maxsep=13)
+        short = precisions_in_range(predictions, targets, minsep=6, maxsep=12)
         for k, v in short.items():
             metrics[f'short_{k}'] = float(v.squeeze())
-        medium = precisions_in_range(predictions, targets, minsep=13, maxsep=25)
+        medium = precisions_in_range(predictions, targets, minsep=12, maxsep=24)
         for k, v in medium.items():
             metrics[f'medium_{k}'] = float(v.squeeze())
-        long = precisions_in_range(predictions, targets, minsep=25)
+        long = precisions_in_range(predictions, targets, minsep=24)
         for k, v in long.items():
             metrics[f'long_{k}'] = float(v.squeeze())
         metric_list.append(metrics)
