@@ -15,8 +15,6 @@ $ git pull
 $ make
 ```
 
-todo: out of the box apex?
-
 
 ## Running a training run
 
