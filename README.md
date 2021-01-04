@@ -1,5 +1,7 @@
 # iclr-2021-factored-attention
 
+This repository contains code for reproducing results in our paper [Single Layers of Attention Suffice to Predict Protein Contacts](https://www.biorxiv.org/content/10.1101/2020.12.21.423882v2). This code is built entirely on  [Mogwai](https://github.com/nickbhat/mogwai), a small library for MRF models of protein families.  If you wish to use our Potts or attention implementations for your own exploration, it is easier to use Mogwai directly. If you have questions, feel free to cntact us or open an issue!
+
 ## Installing
 
 After cloning, please install mogwai and necessary dependencies with
