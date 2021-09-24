@@ -4,6 +4,7 @@ from pathlib import Path
 import random
 import string
 import io
+import pickle as pkl
 
 import matplotlib.pyplot as plt
 import pytorch_lightning as pl
@@ -52,7 +53,7 @@ def train():
     parser.add_argument(
         "--wandb_project",
         type=str,
-        default="iclr2021-rebuttal",
+        default="synthetic-protein-landscapes",
         help="W&B project used for logging.",
     )
     parser.add_argument(
@@ -161,11 +162,11 @@ def train():
 
     if args.save_model_s3:
         bytestream = io.BytesIO()
-        torch.save(model.state_dict(), bytestream)
+        pkl.dump(model.state_dict(), bytestream)
         bytestream.seek(0)
 
         key = os.path.join(
-            "proteindata", "iclr-2021-factored-attention", wandb.run.path, "model_state_dict.h5"
+            "proteindata", "synthetic-protein-landscapes", wandb.run.path, "{}_model_state_dict.pkl".format(pdb)
         )
         response = s3_client.put_object(
             Bucket=s3_bucket, Body=bytestream, Key=key, ACL="public-read"
