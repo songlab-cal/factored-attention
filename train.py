@@ -25,7 +25,7 @@ from mogwai.vocab import FastaVocab
 from loggers import WandbLoggerFrozenVal
 
 s3_client = boto3.client("s3")
-s3_bucket = "proteindata"
+s3_bucket = "songlabdata"
 
 
 def train():
@@ -163,8 +163,9 @@ def train():
         bytestream = io.BytesIO()
         torch.save(model.state_dict(), bytestream)
         bytestream.seek(0)
+
         key = os.path.join(
-            "iclr-2021-factored-attention", wandb.run.path, "model_state_dict.h5"
+            "proteindata", "iclr-2021-factored-attention", wandb.run.path, "model_state_dict.h5"
         )
         response = s3_client.put_object(
             Bucket=s3_bucket, Body=bytestream, Key=key, ACL="public-read"
