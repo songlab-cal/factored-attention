@@ -4,12 +4,14 @@ from pathlib import Path
 import random
 import string
 import io
+import pickle as pkl
 
+import boto3
+import numpy as np
 import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
 import wandb
-import boto3
 
 from mogwai.data_loading import MSADataModule, MSDataModule
 from mogwai.parsing import read_contacts
@@ -26,6 +28,14 @@ from loggers import WandbLoggerFrozenVal
 
 s3_client = boto3.client("s3")
 s3_bucket = "songlabdata"
+
+
+
+def torch_to_numpy(state_dict, keys=['weight', 'bias', '_true_contacts', '_max_auc']):
+    numpy_dict = dict()
+    for key in keys:
+        numpy_dict[key] = state_dict[key].numpy()
+    return numpy_dict
 
 
 def train():
@@ -52,7 +62,7 @@ def train():
     parser.add_argument(
         "--wandb_project",
         type=str,
-        default="iclr2021-rebuttal",
+        default="synthetic-protein-landscapes",
         help="W&B project used for logging.",
     )
     parser.add_argument(
@@ -161,17 +171,24 @@ def train():
 
     if args.save_model_s3:
         bytestream = io.BytesIO()
-        torch.save(model.state_dict(), bytestream)
+        model_dict = torch_to_numpy(model.state_dict())
+        model_dict['precision_at_l'] = model.get_precision(do_apc=True).numpy()
+
+        # add query sequence
+        with open(args.data, 'rb') as f:
+            msa_raw = np.load(f)['msa']
+        model_dict['query_seq'] = msa_raw[0]
+
+        np.savez(bytestream, **model_dict)
         bytestream.seek(0)
 
         key = os.path.join(
-            "proteindata", "iclr-2021-factored-attention", wandb.run.path, "model_state_dict.h5"
+            "proteindata", "synthetic-protein-landscapes", wandb.run.path, "{}_model_state_dict.npz".format(pdb)
         )
         response = s3_client.put_object(
             Bucket=s3_bucket, Body=bytestream, Key=key, ACL="public-read"
         )
         print(f"uploaded state dict to s3://{s3_bucket}/{key}")
-
 
 if __name__ == "__main__":
     train()
