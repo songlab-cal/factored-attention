@@ -1,6 +1,6 @@
 # factored-attention
 
-This repository contains code for reproducing results in our paper [Interpreting Potts and Transformer Protein Models Through the Lens of Simplified Attention](https://www.biorxiv.org/content/10.1101/2020.12.21.423882v2). This code is built entirely on [Mogwai](https://github.com/nickbhat/mogwai), a small library for MRF models of protein families.  If you wish to use our Potts or attention implementations for your own exploration, it is easier to use [Mogwai](https://github.com/nickbhat/mogwai) directly. If you have questions, feel free to contact us or open an issue!
+This repository contains code for reproducing results in our paper [Interpreting Potts and Transformer Protein Models Through the Lens of Simplified Attention](https://psb.stanford.edu/psb-online/proceedings/psb22/bhattacharya.pdf). This code is built entirely on [Mogwai](https://github.com/nickbhat/mogwai), a small library for MRF models of protein families.  If you wish to use our Potts or attention implementations for your own exploration, it is easier to use [Mogwai](https://github.com/nickbhat/mogwai) directly. If you have questions, feel free to contact us or open an issue!
 
 ## Installing
 
