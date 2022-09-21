@@ -173,6 +173,12 @@ def train():
         bytestream = io.BytesIO()
         model_dict = torch_to_numpy(model.state_dict())
         model_dict['precision_at_l'] = model.get_precision(do_apc=True).numpy()
+
+        # add query sequence
+        with open(args.data, 'rb') as f:
+            msa_raw = np.load(f)['msa']
+        model_dict['query_seq'] = msa_raw[0]
+
         np.savez(bytestream, **model_dict)
         bytestream.seek(0)
 

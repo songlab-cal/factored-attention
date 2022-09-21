@@ -4,6 +4,7 @@ figs/
 
 # Logging
 wandb/
+wandb_download/
 lightning_logs/
 gremlin-contacts/
 gremlin-results/
